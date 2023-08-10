@@ -1,21 +1,21 @@
-#include <stdexcept>
-#include <algorithm>
 #include "byte_stream.hh"
+#include <algorithm>
 #include <iostream>
+#include <stdexcept>
 using namespace std;
 
 ByteStream::ByteStream( uint64_t capacity ) : capacity_( capacity ) {}
 
 void Writer::push( string data )
 {
-  uint64_t push_num = min(data.size(), capacity_ - data_queue_.size());
-  if (push_num && !data_queue_.size()) {
+  uint64_t push_num = min( data.size(), capacity_ - data_queue_.size() );
+  if ( push_num && !data_queue_.size() ) {
     view_[0] = data[0];
   }
-  for (uint64_t i = 0; i < push_num; ++i) {
-    data_queue_.push(data[i]);
+  for ( uint64_t i = 0; i < push_num; ++i ) {
+    data_queue_.push( data[i] );
   }
-  
+
   total_bytes_pushed_ += push_num;
 }
 
@@ -70,11 +70,11 @@ bool Reader::has_error() const
 void Reader::pop( uint64_t len )
 {
   // Your code here.
-  uint64_t pop_num = min(len, data_queue_.size());
-  for (uint64_t i = 0; i < pop_num; ++i) {
+  uint64_t pop_num = min( len, data_queue_.size() );
+  for ( uint64_t i = 0; i < pop_num; ++i ) {
     data_queue_.pop();
   }
-  if (data_queue_.size()) {
+  if ( data_queue_.size() ) {
     view_[0] = data_queue_.front();
   }
   total_bytes_poped += pop_num;

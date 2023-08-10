@@ -14,23 +14,20 @@ void get_URL( const string& host, const string& path )
   // Host: cs144.keithw.org
   // Connection: close
   //
-  Address addr(host, "http");
+  Address addr( host, "http" );
   TCPSocket sock;
-  sock.connect(addr);
-  
-  string write_buffer("GET " + path + " HTTP/1.1\r\n" + \
-                      "Host: " + host + "\r\n" + \
-                      "Connection: close" + "\r\n\r\n");
-  
-  sock.write(write_buffer);
+  sock.connect( addr );
+
+  string write_buffer( "GET " + path + " HTTP/1.1\r\n" + "Host: " + host + "\r\n" + "Connection: close"
+                       + "\r\n\r\n" );
+
+  sock.write( write_buffer );
   string read_buffer;
-  while (!sock.eof()) {
-    sock.read(read_buffer);
+  while ( !sock.eof() ) {
+    sock.read( read_buffer );
     cout << read_buffer;
   }
   sock.close();
-  
-  
 }
 
 int main( int argc, char* argv[] )
