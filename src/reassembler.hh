@@ -1,8 +1,9 @@
 #pragma once
 
 #include "byte_stream.hh"
-
+#include <set>
 #include <string>
+#include <unordered_map>
 
 class Reassembler
 {
@@ -31,4 +32,14 @@ public:
 
   // How many bytes are stored in the Reassembler itself?
   uint64_t bytes_pending() const;
+
+private:
+  std::set<uint64_t>::iterator get_proper_iter( uint64_t key );
+
+private:
+  uint64_t pending_bytes_ = 0;
+  uint64_t next_expected_index_ = 0;
+  bool ready_to_close_ = false;
+  std::unordered_map<uint64_t, std::string> index_to_data_;
+  std::set<uint64_t> index_set_;
 };
