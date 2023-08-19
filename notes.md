@@ -18,3 +18,10 @@ operator std::string_view() const { return *buffer_; }
 operator std::string&() { return *buffer_; }
 
 **6. std::optinal**
+value_or
+
+**7. std::string**
+erase substr 效率
+迭代器构造string
+peek() 重写
+0.3 Gbits/s -> 2.7 Gbits/s

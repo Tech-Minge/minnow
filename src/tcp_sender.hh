@@ -31,4 +31,10 @@ public:
   /* Accessors for use in testing */
   uint64_t sequence_numbers_in_flight() const;  // How many sequence numbers are outstanding?
   uint64_t consecutive_retransmissions() const; // How many consecutive *re*transmissions have happened?
+
+private:
+  uint64_t outstanding_sequence_number_ = 0;
+  uint64_t consecutive_retransmission_count_ = 0;
+  Wrap32 receiver_ackno_ {0};
+  uint16_t receiver_window_size_ = 0;
 };
