@@ -3,6 +3,25 @@
 #include "byte_stream.hh"
 #include "tcp_receiver_message.hh"
 #include "tcp_sender_message.hh"
+#include <queue>
+
+class Timer
+{
+private:
+  uint64_t RTO_;
+  uint64_t time_passed_ = 0;
+  bool expired_ = false;
+  void expire();
+
+public:
+  Timer( uint64_t RTO );
+  void time_pass( uint64_t ms );
+  void set_rto( uint64_t RTO );
+  void start();
+  void stop();
+  void backoff();
+  bool is_expired();
+};
 
 class TCPSender
 {
@@ -35,6 +54,12 @@ public:
 private:
   uint64_t outstanding_sequence_number_ = 0;
   uint64_t consecutive_retransmission_count_ = 0;
-  Wrap32 receiver_ackno_ {0};
-  uint16_t receiver_window_size_ = 0;
+  uint64_t next_from_reader_ = 0;
+  uint64_t next_to_send_ = 0;
+  std::queue<TCPSenderMessage> ready_message_;
+  std::queue<TCPSenderMessage> need_acked_message_;
+  uint64_t receiver_window_start_ = 0;
+  uint16_t receiver_window_size_ = 1;
+  bool fin_ = false;
+  Timer timer_;
 };

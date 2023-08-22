@@ -13,7 +13,7 @@ void TCPReceiver::receive( TCPSenderMessage message, Reassembler& reassembler, W
   if ( !syn_ ) {
     return; // discard data if doesn't receive syn flag
   }
-  uint64_t index = message.seqno.unwrap( Wrap32( isn_ ), inbound_stream.bytes_pushed() ) + ( message.SYN ? 0 : -1 );
+  uint64_t index = message.seqno.unwrap( isn_, inbound_stream.bytes_pushed() ) + ( message.SYN ? 0 : -1 );
   reassembler.insert( index, message.payload, message.FIN, inbound_stream );
   send( inbound_stream );
 }
