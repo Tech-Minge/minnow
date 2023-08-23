@@ -67,21 +67,20 @@ uint64_t TCPSender::consecutive_retransmissions() const
 optional<TCPSenderMessage> TCPSender::maybe_send()
 {
   // Your code here.
-  if ( ready_message_.empty() ) {
+  if ( send_message_.empty() ) {
     return {};
   }
 
-  auto to_send = ready_message_.front();
+  auto to_send = send_message_.front();
   uint64_t front_ack = to_send.seqno.unwrap( isn_, next_to_send_ );
   if ( next_to_send_ > front_ack ) {
     // retransmit
 
   } else {
     next_to_send_ += to_send.sequence_length();
-    need_acked_message_.push( to_send );
   }
 
-  ready_message_.pop();
+  send_message_.pop();
   return to_send;
 }
 
@@ -127,10 +126,11 @@ void TCPSender::push( Reader& outbound_stream )
     }
     outstanding_sequence_number_ += message.sequence_length();
     message.seqno = isn_ + next_from_reader_;
-    if ( ready_message_.empty() && need_acked_message_.empty() ) {
+    if ( outstanding_message_.empty() ) {
       timer_.start();
     }
-    ready_message_.push( message );
+    send_message_.push( message );
+    outstanding_message_.push( message );
     next_from_reader_ += message.sequence_length();
     // if no code below when finish, will iter again and again
     if ( message.FIN ) {
@@ -164,12 +164,12 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
     start = true;
   }
   receiver_window_start_ = cur_ackno;
-  while ( !need_acked_message_.empty() ) {
-    auto to_be_acked = need_acked_message_.front();
+  while ( !outstanding_message_.empty() ) {
+    auto to_be_acked = outstanding_message_.front();
     uint64_t ackno = to_be_acked.seqno.unwrap( isn_, next_to_send_ );
     if ( ackno + to_be_acked.sequence_length() <= cur_ackno ) {
       outstanding_sequence_number_ -= to_be_acked.sequence_length();
-      need_acked_message_.pop();
+      outstanding_message_.pop();
     } else {
       break;
     }
@@ -178,7 +178,7 @@ void TCPSender::receive( const TCPReceiverMessage& msg )
 
   // timer
   timer_.set_rto( initial_RTO_ms_ );
-  if ( need_acked_message_.empty() && ready_message_.empty() ) {
+  if ( outstanding_message_.empty() ) {
     timer_.stop();
   } else if ( start ) {
     // ack new data
@@ -198,9 +198,9 @@ void TCPSender::tick( const size_t ms_since_last_tick )
     } else {
       timer_.start();
     }
-    if ( need_acked_message_.empty() ) {
+    if ( outstanding_message_.empty() ) {
       return;
     }
-    ready_message_.push( need_acked_message_.front() );
+    send_message_.push( outstanding_message_.front() );
   }
 }

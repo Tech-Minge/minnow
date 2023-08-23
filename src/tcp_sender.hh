@@ -56,8 +56,8 @@ private:
   uint64_t consecutive_retransmission_count_ = 0;
   uint64_t next_from_reader_ = 0;
   uint64_t next_to_send_ = 0;
-  std::queue<TCPSenderMessage> ready_message_;
-  std::queue<TCPSenderMessage> need_acked_message_;
+  std::queue<TCPSenderMessage> send_message_; // for test check
+  std::queue<TCPSenderMessage> outstanding_message_;
   uint64_t receiver_window_start_ = 0;
   uint16_t receiver_window_size_ = 1;
   bool fin_ = false;
