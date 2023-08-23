@@ -16,8 +16,13 @@ class ByteStream {
     // all, but if any of your tests are taking longer than a second,
     // that's a sign that you probably want to keep exploring
     // different approaches.
-
-    bool _error{};  //!< Flag indicating that the stream suffered an error.
+    uint64_t capacity_;
+    uint64_t total_bytes_pushed_ = 0;
+    uint64_t total_bytes_poped = 0;
+    bool writer_end_ = false; // whether writer has ended
+    bool error_ = false; //!< Flag indicating that the stream suffered an error.
+    std::string data_;
+    
 
   public:
     //! Construct a stream with room for `capacity` bytes.
@@ -38,7 +43,7 @@ class ByteStream {
     void end_input();
 
     //! Indicate that the stream suffered an error.
-    void set_error() { _error = true; }
+    void set_error() { error_ = true; }
     //!@}
 
     //! \name "Output" interface for the reader
@@ -59,7 +64,7 @@ class ByteStream {
     bool input_ended() const;
 
     //! \returns `true` if the stream has suffered an error
-    bool error() const { return _error; }
+    bool error() const { return error_; }
 
     //! \returns the maximum amount that can currently be read from the stream
     size_t buffer_size() const;
