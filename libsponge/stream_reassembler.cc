@@ -13,17 +13,59 @@ void DUMMY_CODE(Targs &&... /* unused */) {}
 
 using namespace std;
 
-StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity) {}
+InnerBuffer::InnerBuffer(const size_t capacity): buffer_(capacity), bitmap_(capacity) {}
 
-std::set<uint64_t>::iterator StreamReassembler::get_proper_iter( uint64_t key )
-{
-    auto iter = index_set_.upper_bound( key );
-    if ( iter != index_set_.begin() ) {
-        // find the biggest value that smaller than or equal start_index
-        --iter;
+void InnerBuffer::insert(const std::string &data, const size_t first_index, const size_t writer_available) {
+    // empty str
+    if (data.empty()) {
+        return;
     }
-    return iter;
+    size_t discard_index = next_expected_index_ + writer_available;
+    size_t start_index = max( first_index, next_expected_index_ );
+    size_t end_index = min( data.size() + first_index, discard_index );
+
+    // truncate data
+    if ( start_index < discard_index && end_index >= next_expected_index_ ) {
+        for (size_t i = start_index; i < end_index; ++i) {
+            size_t relative_index = i - first_index;
+            size_t buffer_index = i % bitmap_.size();
+            if (!bitmap_[buffer_index]) {
+                buffer_[buffer_index] = data[relative_index];
+                bitmap_[buffer_index] = true;
+                ++pending_bytes_;
+            }
+        }
+    } // discard
+
 }
+
+size_t InnerBuffer::pending_bytes_number() const {
+    return pending_bytes_;
+}
+
+size_t InnerBuffer::next_expected_index() const {
+    return next_expected_index_;
+}
+
+std::string InnerBuffer::pop_writable_str() {
+    std::string ret;
+    size_t i;
+    for (i = 0; i < bitmap_.size(); ++i) {
+        size_t index = (i + next_expected_index_) % bitmap_.size();
+        if (bitmap_[index]) {
+            bitmap_[index] = false;
+            ret.push_back(buffer_[index]);
+        } else {
+            break;
+        }
+    }
+    pending_bytes_ -= i;
+    next_expected_index_ += i;
+    return ret;
+}
+
+StreamReassembler::StreamReassembler(const size_t capacity) : _output(capacity), _capacity(capacity), reassembler_buffer_(capacity) {}
+
 
 //! \details This function accepts a substring (aka a segment) of bytes,
 //! possibly out-of-order, from the logical stream, and assembles any newly
@@ -34,70 +76,19 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
         max_end_index_ = index + data.size();
         ready_to_close_ = true;
     }
-    if (data.empty()) {
-        if ( ready_to_close_ && next_expected_index_ == max_end_index_ ) {
-            _output.end_input();
-        }
-        return;
+    
+    reassembler_buffer_.insert(data, index, _output.remaining_capacity());
+    std::string able_to_write = reassembler_buffer_.pop_writable_str();
+    if (able_to_write.size()) {
+        _output.write(able_to_write);
     }
-    
-    auto writer_available = _output.remaining_capacity();
-    auto discard_index = next_expected_index_ + writer_available;
-    auto start_index = max( index, next_expected_index_ );
-    auto end_index = min( data.size() + index, discard_index );
-    string new_data;
-  // truncate data
-    if ( start_index < discard_index && end_index >= next_expected_index_ ) {
-        new_data = data.substr( start_index - index, end_index - start_index );
 
-        if ( index_set_.size() ) {
-            // concat string
-            auto low_iter = get_proper_iter( start_index );
-            auto up_iter = get_proper_iter( end_index );
-            auto low_index = *low_iter;
-            auto up_index = *up_iter;
-            if ( low_index < start_index && low_index + index_to_data_[low_index].size() >= start_index ) {
-                new_data = index_to_data_[low_index].substr( 0, start_index - low_index ) + new_data;
-                start_index = low_index;
-            }
-            if ( up_index <= end_index && up_index + index_to_data_[up_index].size() > end_index ) {
-                new_data = new_data + index_to_data_[up_index].substr( end_index - up_index );
-                end_index = up_index;
-            }
-            ++up_iter;
-
-            for ( auto it = low_iter; it != up_iter; ) {
-                auto cur_index = *it;
-                auto end = index_to_data_[cur_index].size() + cur_index;
-                if ( cur_index > end_index || end < start_index ) {
-                    ++it;
-                    continue;
-                }
-                pending_bytes_ -= index_to_data_[cur_index].size();
-                index_to_data_.erase( cur_index );
-                it = index_set_.erase( it );
-            }
-        }
-
-        // 1. directly write
-        if ( next_expected_index_ == start_index ) {
-            _output.write( new_data );
-            next_expected_index_ += new_data.size();
-        } else {
-            // 2. store in reassembler
-            pending_bytes_ += new_data.size();
-            index_to_data_[start_index] = new_data;
-            index_set_.insert( start_index );
-        }
-    } // 3. discard
-
-    
     // when no buffered data and set close flag -> truly close
-    if ( ready_to_close_ && next_expected_index_ == max_end_index_ ) {
+    if ( ready_to_close_ && reassembler_buffer_.next_expected_index() == max_end_index_ ) {
         _output.end_input();
     }
 }
 
-size_t StreamReassembler::unassembled_bytes() const { return pending_bytes_; }
+size_t StreamReassembler::unassembled_bytes() const { return reassembler_buffer_.pending_bytes_number(); }
 
-bool StreamReassembler::empty() const { return pending_bytes_ == 0; }
+bool StreamReassembler::empty() const { return reassembler_buffer_.pending_bytes_number() == 0; }

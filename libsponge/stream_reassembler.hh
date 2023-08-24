@@ -5,25 +5,36 @@
 
 #include <cstdint>
 #include <string>
-#include <unordered_map>
-#include <set>
+#include <optional>
+#include <vector>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
+
+class InnerBuffer {
+public:
+  InnerBuffer(const size_t capacity);
+  void insert(const std::string &data, const size_t first_index, const size_t writer_available);
+  size_t pending_bytes_number() const;
+  size_t next_expected_index() const;
+  std::string pop_writable_str();
+
+private:
+  std::vector<char> buffer_;
+  std::vector<bool> bitmap_;
+  uint64_t pending_bytes_ = 0;
+  uint64_t next_expected_index_ = 0;
+};
+
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
 
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
-    uint64_t pending_bytes_ = 0;
-    uint64_t next_expected_index_ = 0;
-    bool ready_to_close_ = false;
-    std::unordered_map<uint64_t, std::string> index_to_data_;
-    std::set<uint64_t> index_set_;
+    InnerBuffer reassembler_buffer_;
     uint64_t max_end_index_ = 0;
-  private:
-    std::set<uint64_t>::iterator get_proper_iter( uint64_t key );
+    bool ready_to_close_ = false;
   
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
