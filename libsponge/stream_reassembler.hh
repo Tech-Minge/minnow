@@ -16,14 +16,13 @@ public:
   InnerBuffer(const size_t capacity);
   void insert(const std::string &data, const size_t first_index, const size_t writer_available);
   size_t pending_bytes_number() const;
-  size_t next_expected_index() const;
   std::string pop_writable_str();
 
 private:
   std::vector<char> buffer_;
   std::vector<bool> bitmap_;
   uint64_t pending_bytes_ = 0;
-  uint64_t next_expected_index_ = 0;
+  uint64_t next_expected_index_ = 0; // just equal to `ByteStream's bytes_written()`
 };
 
 class StreamReassembler {

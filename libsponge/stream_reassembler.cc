@@ -43,10 +43,6 @@ size_t InnerBuffer::pending_bytes_number() const {
     return pending_bytes_;
 }
 
-size_t InnerBuffer::next_expected_index() const {
-    return next_expected_index_;
-}
-
 std::string InnerBuffer::pop_writable_str() {
     std::string ret;
     size_t i;
@@ -84,7 +80,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
     }
 
     // when no buffered data and set close flag -> truly close
-    if ( ready_to_close_ && reassembler_buffer_.next_expected_index() == max_end_index_ ) {
+    if ( ready_to_close_ && _output.bytes_written() == max_end_index_ ) {
         _output.end_input();
     }
 }
