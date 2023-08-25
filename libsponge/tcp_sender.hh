@@ -9,6 +9,24 @@
 #include <functional>
 #include <queue>
 
+class Timer
+{
+private:
+  uint64_t RTO_;
+  uint64_t time_passed_ = 0;
+  bool expired_ = false;
+  void expire();
+
+public:
+  Timer( uint64_t RTO );
+  void time_pass( uint64_t ms );
+  void set_rto( uint64_t RTO );
+  void start();
+  void stop();
+  void backoff();
+  bool is_expired();
+};
+
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -29,9 +47,15 @@ class TCPSender {
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
-    //! the (absolute) sequence number for the next byte to be sent
-    uint64_t _next_seqno{0};
-
+    uint64_t outstanding_sequence_number_ = 0;
+    uint64_t consecutive_retransmission_count_ = 0;
+    uint64_t next_to_send_ = 0; //! the (absolute) sequence number for the next byte to be sent
+    std::queue<TCPSegment> outstanding_message_;
+    uint64_t receiver_window_start_ = 0;
+    uint16_t receiver_window_size_ = 1;
+    bool fin_ = false;
+    Timer timer_;
+  
   public:
     //! Initialize a TCPSender
     TCPSender(const size_t capacity = TCPConfig::DEFAULT_CAPACITY,
@@ -82,10 +106,10 @@ class TCPSender {
     //!@{
 
     //! \brief absolute seqno for the next byte to be sent
-    uint64_t next_seqno_absolute() const { return _next_seqno; }
+    uint64_t next_seqno_absolute() const { return next_to_send_; }
 
     //! \brief relative seqno for the next byte to be sent
-    WrappingInt32 next_seqno() const { return wrap(_next_seqno, _isn); }
+    WrappingInt32 next_seqno() const { return wrap(next_to_send_, _isn); }
     //!@}
 };
 
