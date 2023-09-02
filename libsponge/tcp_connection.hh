@@ -23,7 +23,8 @@ class TCPConnection {
     bool _linger_after_streams_finish{true};
 
   private:
-    void send_tcpsegment(bool need_set_ack);
+    void send_tcpsegment(bool need_set_ack = false, bool need_set_rst = false);
+    void set_error_state();
     void set_ack_and_win(TCPSegment &seg);
   public:
     //! \name "Input" interface for the writer

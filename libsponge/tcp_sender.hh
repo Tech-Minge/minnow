@@ -15,6 +15,7 @@ private:
   uint64_t RTO_;
   uint64_t time_passed_ = 0;
   bool expired_ = false;
+  bool stop_ = true;
   void expire();
 
 public:
@@ -23,6 +24,7 @@ public:
   void set_rto( uint64_t RTO );
   void start();
   void stop();
+  bool is_stop();
   void backoff();
   bool is_expired();
 };

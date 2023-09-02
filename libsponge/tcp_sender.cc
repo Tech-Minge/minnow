@@ -18,39 +18,47 @@ Timer::Timer( uint64_t RTO ) : RTO_( RTO ) {}
 
 void Timer::start()
 {
-  time_passed_ = 0;
-  expired_ = false;
+    time_passed_ = 0;
+    expired_ = false;
+    stop_ = false;
 }
 
-void Timer::stop() {}
+void Timer::stop() {
+    stop_ = true;
+}
 
 void Timer::time_pass( uint64_t ms )
 {
-  time_passed_ += ms;
-  if ( time_passed_ >= RTO_ ) {
-    expire();
-  }
+    time_passed_ += ms;
+    if ( time_passed_ >= RTO_ ) {
+        expire();
+    }
 }
 
 void Timer::expire()
 {
-  expired_ = true;
+    expired_ = true;
 }
 
 bool Timer::is_expired()
 {
-  return expired_;
+    return expired_;
+}
+
+bool Timer::is_stop()
+{
+    return stop_;
 }
 
 void Timer::backoff()
 {
-  RTO_ *= 2;
-  start();
+    RTO_ *= 2;
+    start();
 }
 
 void Timer::set_rto( uint64_t rto )
 {
-  RTO_ = rto;
+    RTO_ = rto;
 }
 
 //! \param[in] capacity the capacity of the outgoing byte stream
@@ -140,6 +148,9 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
 
 //! \param[in] ms_since_last_tick the number of milliseconds since the last call to this method
 void TCPSender::tick(const size_t ms_since_last_tick) {
+    if (timer_.is_stop()) {
+        return;
+    }
     timer_.time_pass( ms_since_last_tick );
     if ( timer_.is_expired() ) {
         if ( receiver_window_size_ ) {
@@ -148,9 +159,9 @@ void TCPSender::tick(const size_t ms_since_last_tick) {
         } else {
             timer_.start();
         }
-        if ( outstanding_message_.empty() ) {
-            return;
-        }
+        // if ( outstanding_message_.empty() ) {
+        //     return;
+        // }
         _segments_out.push( outstanding_message_.front() );
     }
 }
