@@ -69,7 +69,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
         _linger_after_streams_finish = false;
     }
     if (header.rst) {
-        if (!header.win) {
+        if (!header.win) { // maybe no this condition? but unexpected RST with win=0, ack=0
             return;
         }
         set_error_state();
