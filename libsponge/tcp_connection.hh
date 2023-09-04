@@ -21,9 +21,9 @@ class TCPConnection {
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
     bool _linger_after_streams_finish{true};
-
   private:
-    void send_tcpsegment(bool need_set_ack = false, bool need_set_rst = false);
+    void send_tcpsegment();
+    void send_rst();
     void set_error_state();
     void set_ack_and_win(TCPSegment &seg);
   public:
