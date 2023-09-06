@@ -29,7 +29,9 @@ https://networkengineering.stackexchange.com/questions/69554/sequence-number-in-
 
 **5. tshark 网卡抓包**
 
-tun tap https://www.junmajinlong.com/virtual/network/all_about_tun_tap/index.html#:~:text=tun%E3%80%81tap%20%E6%98%AFLinux%20%E6%8F%90%E4%BE%9B,%E7%A9%BA%E9%97%B4%E4%B9%8B%E9%97%B4%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E3%80%82
+tun tap
+
+https://www.junmajinlong.com/virtual/network/all_about_tun_tap/index.html#:~:text=tun%E3%80%81tap%20%E6%98%AFLinux%20%E6%8F%90%E4%BE%9B,%E7%A9%BA%E9%97%B4%E4%B9%8B%E9%97%B4%E4%BC%A0%E8%BE%93%E6%95%B0%E6%8D%AE%E3%80%82
 
 https://zhuanlan.zhihu.com/p/388742230
 
@@ -48,3 +50,17 @@ https://zhuanlan.zhihu.com/p/515239767
 第几层，与ether关系
 
 **8. buffer & buffer list**
+
+代码实现
+
+**9. 网络发包全流程**
+
+主机 arp mac router 3表 是否都有
+
+默认网关 DHCP
+
+主机路由 下一跳ip
+
+**10. AsyncNetworkInterface**
+
+什么作用
